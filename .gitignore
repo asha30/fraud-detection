@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Large dataset files
+Synthetic_Financial_datasets_log.csv
+enriched_fraud_dataset.csv
+backend/app/data/
+
+# Environment
+.env
+*.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Logs
+*.log
+nohup.out
+
+# DB
+backend/insights.db
+
+# OS
+.DS_Store

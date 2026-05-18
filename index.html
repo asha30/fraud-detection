@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fraud Detection — Live Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:        #1358aa;
+      --brand-hover:  #0e4a94;
+      --brand-dark:   #093370;
+      --brand-light:  #38b0f9;
+      --brand-tint:   #dbeeff;
+      --brand-subtle: #e6f4fe;
+      --neutral-900:  #091E42;
+      --neutral-800:  #172B4D;
+      --neutral-700:  #253858;
+      --neutral-600:  #42526E;
+      --neutral-400:  #7A869A;
+      --neutral-300:  #B3BAC5;
+      --neutral-200:  #DFE1E6;
+      --neutral-100:  #EBECF0;
+      --neutral-50:   #F4F5F7;
+      --neutral-20:   #FAFBFC;
+      --success:      #36B37E;
+      --success-bg:   #E3FCEF;
+      --warning:      #FFAB00;
+      --warning-bg:   #FFFAE6;
+      --error:        #FF5630;
+      --error-bg:     #FFEBE6;
+      --info:         #00B8D9;
+      --info-bg:      #E6FCFF;
+      --white:        #FFFFFF;
+    }
+
+    body {
+      background: var(--neutral-50);
+      color: var(--neutral-900);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    .app-shell { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 240px; min-width: 240px;
+      background: var(--brand-dark);
+      display: flex; flex-direction: column;
+      border-right: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .sidebar-logo {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-logo .brand-name { font-size: 17px; font-weight: 900; color: #fff; letter-spacing: -0.3px; }
+    .sidebar-logo .brand-sub  { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    nav { padding: 12px 10px; flex: 1; }
+    .nav-section { font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.28); text-transform: uppercase; letter-spacing: 1.2px; padding: 10px 10px 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: 8px;
+      color: rgba(147,197,253,0.55); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s; text-decoration: none;
+      margin-bottom: 1px;
+    }
+    .nav-item:hover  { background: rgba(255,255,255,0.06); color: #fff; }
+    .nav-item.active { background: rgba(255,255,255,0.11); color: #fff; }
+    .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto; background: var(--error); color: #fff;
+      font-size: 10px; font-weight: 900; min-width: 18px; height: 18px;
+      border-radius: 9px; display: flex; align-items: center; justify-content: center;
+      padding: 0 5px; display: none;
+    }
+    .nav-badge.show { display: flex; }
+
+    .sidebar-user {
+      padding: 10px 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .user-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: 8px; cursor: pointer;
+    }
+    .user-row:hover { background: rgba(255,255,255,0.05); }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: 11px; flex-shrink: 0;
+    }
+    .user-name { font-size: 13px; font-weight: 800; color: #fff; }
+    .user-role { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Main ── */
+    .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .top-header {
+      height: 60px; background: var(--white);
+      border-bottom: 1px solid var(--neutral-200);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; flex-shrink: 0; z-index: 10;
+    }
+    .breadcrumb { font-size: 13px; font-weight: 700; color: var(--neutral-600); }
+    .breadcrumb span { color: var(--neutral-900); font-weight: 900; }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .header-icon { color: var(--neutral-400); cursor: pointer; transition: color 0.15s; }
+    .header-icon:hover { color: var(--brand); }
+    .avatar { width: 30px; height: 30px; background: var(--brand-light); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 11px; }
+
+    /* ── Views ── */
+    .view { display: none; flex: 1; overflow-y: auto; padding: 24px 28px; }
+    .view.active { display: block; }
+
+    /* ── Page title ── */
+    .page-title-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 20px; font-weight: 900; color: var(--neutral-900); letter-spacing: -0.3px; }
+    .page-sub   { font-size: 12px; font-weight: 600; color: var(--neutral-400); margin-top: 3px; }
+    .title-actions { display: flex; align-items: center; gap: 8px; }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800;
+      border: 1px solid var(--neutral-200); background: var(--neutral-50); color: var(--neutral-600);
+    }
+    .status-pill.live { background: var(--success-bg); border-color: #ABF5D1; color: #006644; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--neutral-300); flex-shrink: 0; }
+    .status-dot.live { background: var(--success); animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: 7px;
+      font-size: 13px; font-weight: 800; cursor: pointer; border: none;
+      transition: all 0.15s; letter-spacing: 0.1px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 1px 3px rgba(19,88,170,0.22); }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn-danger  { background: var(--error); color: #fff; box-shadow: 0 1px 3px rgba(255,86,48,0.22); }
+    .btn-danger:hover { background: #e0452a; }
+    .btn-ghost   { background: var(--white); color: var(--neutral-600); border: 1px solid var(--neutral-200); }
+    .btn-ghost:hover { border-color: var(--neutral-300); color: var(--neutral-800); }
+
+    /* ── Stats grid ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--white); border: 1px solid var(--neutral-200);
+      border-radius: 10px; padding: 16px 18px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 2px rgba(9,30,66,0.04); transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { border-color: var(--neutral-300); box-shadow: 0 2px 6px rgba(9,30,66,0.08); }
+    .stat-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stat-icon svg { width: 20px; height: 20px; }
+    .stat-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.8px; color: var(--neutral-400); margin-bottom: 3px; }
+    .stat-value { font-size: 26px; font-weight: 900; color: var(--neutral-900); line-height: 1; }
+    .stat-sub   { font-size: 11px; font-weight: 600; color: var(--neutral-400); margin-top: 2px; }
+
+    /* ── Idle card ── */
+    .idle-card {
+      background: var(--white); border: 1px solid var(--neutral-200);
+      border-radius: 12px; padding: 56px 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; box-shadow: 0 1px 2px rgba(9,30,66,0.04); text-align: center;
+    }
+    .idle-icon-wrap { width: 60px; height: 60px; border-radius: 16px; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; }
+    .idle-icon-wrap svg { width: 28px; height: 28px; color: var(--brand); }
+    .idle-title { font-size: 16px; font-weight: 900; color: var(--neutral-800); }
+    .idle-desc  { font-size: 13px; font-weight: 500; color: var(--neutral-400); max-width: 360px; line-height: 1.6; }
+    .idle-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .idle-chip  { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--neutral-200); font-size: 12px; font-weight: 700; color: var(--neutral-600); background: var(--neutral-50); }
+
+    /* ── Content grid ── */
+    .content-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+
+    /* ── Panel ── */
+    .panel { background: var(--white); border: 1px solid var(--neutral-200); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(9,30,66,0.04); }
+    .panel-header { padding: 12px 18px; border-bottom: 1px solid var(--neutral-200); display: flex; align-items: center; justify-content: space-between; background: var(--white); }
+    .panel-title { font-size: 13px; font-weight: 900; color: var(--neutral-800); }
+    .panel-sub   { font-size: 11px; font-weight: 600; color: var(--neutral-400); margin-top: 1px; }
+
+    /* ── Table ── */
+    .table-scroll { overflow: auto; max-height: 510px; }
+    .table-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .table-scroll::-webkit-scrollbar-track { background: transparent; }
+    .table-scroll::-webkit-scrollbar-thumb { background: var(--neutral-200); border-radius: 3px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead th {
+      background: var(--neutral-50); padding: 9px 12px; text-align: left;
+      font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.7px;
+      color: var(--neutral-400); border-bottom: 1px solid var(--neutral-200);
+      position: sticky; top: 0; z-index: 1;
+    }
+    tbody tr { border-bottom: 1px solid var(--neutral-100); transition: background 0.1s; animation: slideInRow 0.28s ease; }
+    tbody tr:hover { background: var(--neutral-20); }
+    tbody tr.fraud-row { background: #FFF5F3; }
+    tbody tr.fraud-row:hover { background: #FFE8E3; }
+    @keyframes slideInRow { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+    td { padding: 8px 12px; vertical-align: middle; }
+
+    .type-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.2px; }
+    .type-TRANSFER { background: #EEF2FF; color: #4338CA; }
+    .type-CASH_OUT { background: #FFF7ED; color: #C2410C; }
+    .type-CASH_IN  { background: #F0FDF4; color: #15803D; }
+    .type-PAYMENT  { background: var(--brand-subtle); color: var(--brand); }
+    .type-DEBIT    { background: var(--neutral-100); color: var(--neutral-600); }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px; }
+    .badge-fraud { background: #FFEBE6; color: #BF2600; border: 1px solid #FFBDAD; }
+    .badge-legit { background: var(--success-bg); color: #006644; border: 1px solid #ABF5D1; }
+
+    .prob-wrap { display: flex; align-items: center; gap: 7px; }
+    .prob-bar  { width: 52px; height: 5px; background: var(--neutral-200); border-radius: 3px; overflow: hidden; }
+    .prob-fill { height: 100%; border-radius: 3px; }
+    .prob-text { font-size: 12px; font-weight: 800; min-width: 34px; }
+    .prob-high { color: var(--error); }
+    .prob-low  { color: var(--success); }
+
+    .amount-cell { font-weight: 800; color: var(--neutral-800); }
+    .muted-cell  { font-weight: 600; color: var(--neutral-400); }
+
+    /* ── Alerts panel ── */
+    .alerts-scroll { padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto; }
+    .alerts-scroll::-webkit-scrollbar { width: 4px; }
+    .alerts-scroll::-webkit-scrollbar-thumb { background: var(--neutral-200); border-radius: 2px; }
+
+    .alert-card {
+      background: #FFF5F3; border: 1px solid #FFBDAD; border-radius: 10px; padding: 12px;
+      animation: alertPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes alertPop { from{opacity:0;transform:scale(0.9) translateY(6px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .alert-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .alert-label   { font-size: 11px; font-weight: 900; color: #BF2600; }
+    .alert-time    { font-size: 10px; font-weight: 600; color: var(--neutral-400); }
+    .alert-type    { font-size: 11px; font-weight: 700; color: var(--neutral-700); }
+    .alert-amount  { font-size: 17px; font-weight: 900; color: #BF2600; margin: 3px 0 2px; }
+    .alert-prob    { font-size: 11px; font-weight: 700; color: var(--neutral-500); }
+    .alert-drain   { margin-top: 7px; padding-top: 7px; border-top: 1px solid #FFBDAD; font-size: 10px; font-weight: 600; color: var(--neutral-400); }
+
+    .empty-state { padding: 36px 16px; text-align: center; color: var(--neutral-400); }
+    .empty-state svg { width: 32px; height: 32px; opacity: 0.3; margin-bottom: 7px; }
+    .empty-state p { font-size: 12px; font-weight: 600; }
+
+    /* ── Analytics view ── */
+    .analytics-grid-top {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .analytics-stat {
+      background: var(--white); border: 1px solid var(--neutral-200);
+      border-radius: 12px; padding: 20px 22px;
+      box-shadow: 0 1px 3px rgba(9,30,66,0.05);
+      display: flex; align-items: flex-start; justify-content: space-between;
+      transition: box-shadow 0.2s;
+    }
+    .analytics-stat:hover { box-shadow: 0 3px 10px rgba(9,30,66,0.09); }
+    .analytics-stat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .analytics-stat-icon svg { width: 22px; height: 22px; }
+    .analytics-stat-label { font-size: 12px; font-weight: 700; color: var(--neutral-400); margin-bottom: 6px; }
+    .analytics-stat-value { font-size: 32px; font-weight: 900; line-height: 1; letter-spacing: -0.5px; }
+    .analytics-stat-sub   { font-size: 11px; font-weight: 600; color: var(--neutral-400); margin-top: 4px; }
+
+    .analytics-charts-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .analytics-charts-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .chart-panel {
+      background: var(--white); border: 1px solid var(--neutral-200);
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(9,30,66,0.04);
+    }
+    .chart-header {
+      padding: 14px 18px 10px;
+      border-bottom: 1px solid var(--neutral-100);
+    }
+    .chart-title { font-size: 13px; font-weight: 900; color: var(--neutral-800); }
+    .chart-sub   { font-size: 11px; font-weight: 600; color: var(--neutral-400); margin-top: 2px; }
+    .chart-body  { padding: 16px 16px 12px; position: relative; }
+    .chart-legend { display: flex; gap: 14px; padding: 0 18px 12px; }
+    .legend-item  { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--neutral-600); }
+    .legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Form styles ── */
+    .form-label { display:block; font-size:12px; font-weight:800; color:var(--neutral-700); margin-bottom:5px; }
+    .form-input, .form-select {
+      width:100%; padding:8px 11px; border:1.5px solid var(--neutral-200);
+      border-radius:7px; font-size:13px; font-family:inherit; color:var(--neutral-900);
+      background:var(--white); transition:border-color 0.15s, box-shadow 0.15s;
+      outline:none; appearance:none;
+    }
+    .form-input:focus, .form-select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(19,88,170,0.1); }
+    .form-input[readonly] { background:var(--neutral-50); color:var(--neutral-400); cursor:default; }
+    .form-hint { font-size:11px; font-weight:500; color:var(--neutral-400); margin-top:4px; }
+    .form-input.error { border-color:var(--error); }
+
+    .analytics-idle {
+      background: var(--white); border: 1px solid var(--neutral-200);
+      border-radius: 12px; padding: 48px 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; text-align: center;
+    }
+    .analytics-idle svg { width: 40px; height: 40px; color: var(--neutral-300); }
+    .analytics-idle h3  { font-size: 15px; font-weight: 900; color: var(--neutral-600); }
+    .analytics-idle p   { font-size: 13px; font-weight: 500; color: var(--neutral-400); }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="sidebar-logo">
+      <div class="brand-name">TalentXpress</div>
+      <div class="brand-sub">Employer Portal</div>
+    </div>
+
+    <nav>
+      <div class="nav-section">Main</div>
+      <a class="nav-item" href="#" onclick="return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#" onclick="return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Jobs
+      </a>
+      <a class="nav-item" href="#" onclick="return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Candidates
+      </a>
+
+      <div class="nav-section" style="margin-top:6px">Fraud</div>
+      <a class="nav-item active" id="nav-monitor" href="#" onclick="switchView('monitor'); return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        Live Monitor
+        <span class="nav-badge" id="fraud-badge">0</span>
+      </a>
+      <a class="nav-item" id="nav-analytics" href="#" onclick="switchView('analytics'); return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Analytics
+      </a>
+
+      <div class="nav-section" style="margin-top:6px">Settings</div>
+      <a class="nav-item" id="nav-check" href="#" onclick="switchView('check'); return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Check Transaction
+      </a>
+
+      <div class="nav-section" style="margin-top:6px">Settings</div>
+      <a class="nav-item" href="#" onclick="return false">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Team
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-row">
+        <div class="user-avatar">EA</div>
+        <div>
+          <div class="user-name">Employer Admin</div>
+          <div class="user-role">Admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-area">
+
+    <header class="top-header">
+      <div class="breadcrumb">Home / <span id="breadcrumb-page">Live Monitor</span></div>
+      <div class="header-right">
+        <svg class="header-icon" width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <svg class="header-icon" width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <div class="avatar">EA</div>
+      </div>
+    </header>
+
+    <!-- ═══ LIVE MONITOR VIEW ═══ -->
+    <div class="view active" id="view-monitor">
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Live Monitor</h1>
+          <p class="page-sub">Real-time transaction stream · XGBoost model · 6.3M training rows</p>
+        </div>
+        <div class="title-actions">
+          <span class="status-pill" id="status-pill">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Idle</span>
+          </span>
+          <button class="btn btn-primary" id="btn-start" onclick="startStream()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 3l14 9-14 9V3z"/></svg>
+            Launch Monitor
+          </button>
+          <button class="btn btn-danger" id="btn-stop" style="display:none" onclick="stopStream()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Stop
+          </button>
+          <button class="btn btn-ghost" onclick="clearFeed()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#E6F4FE">
+            <svg fill="none" stroke="#1358aa" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </div>
+          <div>
+            <div class="stat-label">Total Processed</div>
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-sub">transactions</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--success-bg)">
+            <svg fill="none" stroke="#36B37E" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <div class="stat-label">Legitimate</div>
+            <div class="stat-value" id="stat-legit" style="color:var(--success)">0</div>
+            <div class="stat-sub">cleared</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--error-bg)">
+            <svg fill="none" stroke="#FF5630" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div>
+            <div class="stat-label">Fraud Detected</div>
+            <div class="stat-value" id="stat-fraud" style="color:var(--error)">0</div>
+            <div class="stat-sub">flagged</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--info-bg)">
+            <svg fill="none" stroke="#00B8D9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <div>
+            <div class="stat-label">Accuracy</div>
+            <div class="stat-value" id="stat-acc" style="color:var(--info)">—</div>
+            <div class="stat-sub">vs actual label</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--warning-bg)">
+            <svg fill="none" stroke="#FFAB00" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </div>
+          <div>
+            <div class="stat-label">Round</div>
+            <div class="stat-value" id="stat-round" style="color:var(--warning)">—</div>
+            <div class="stat-sub">streaming loop</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Idle -->
+      <div class="idle-card" id="idle-card">
+        <div class="idle-icon-wrap">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <p class="idle-title">Ready to monitor transactions</p>
+        <p class="idle-desc">Click <strong>Launch Monitor</strong> to start streaming transactions through the XGBoost fraud detection model — trained on 6.3 million rows.</p>
+        <button class="btn btn-primary" onclick="startStream()" style="padding:9px 22px;font-size:13px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 3l14 9-14 9V3z"/></svg>
+          Launch Monitor
+        </button>
+        <div class="idle-chips">
+          <span class="idle-chip">📡 Live WebSocket</span>
+          <span class="idle-chip">🤖 XGBoost Model</span>
+          <span class="idle-chip">🚨 Real-time Alerts</span>
+        </div>
+      </div>
+
+      <!-- Feed + Alerts -->
+      <div class="content-grid" id="content-grid" style="display:none">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Live Transaction Feed</div>
+              <div class="panel-sub" id="feed-sub">Waiting…</div>
+            </div>
+            <span id="row-count" style="font-size:11px;font-weight:700;color:var(--neutral-400)"></span>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Orig Bal</th>
+                  <th>New Orig</th>
+                  <th>Dest Bal</th>
+                  <th>Fraud Prob</th>
+                  <th>Prediction</th>
+                  <th>Actual</th>
+                </tr>
+              </thead>
+              <tbody id="tx-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Fraud Alerts</div>
+              <div class="panel-sub" id="alert-sub">No alerts yet</div>
+            </div>
+          </div>
+          <div class="alerts-scroll" id="alerts-list">
+            <div class="empty-state">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              <p>No fraud detected yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CHECK TRANSACTION VIEW ═══ -->
+    <div class="view" id="view-check">
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Check Transaction</h1>
+          <p class="page-sub">Run a single transaction through the XGBoost model instantly.</p>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+        <!-- Form -->
+        <div class="panel" style="overflow:visible">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Transaction Details</div>
+              <div class="panel-sub">Fill in the fields and click Analyze</div>
+            </div>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:20px">
+
+            <!-- Section: Transaction -->
+            <div>
+              <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--neutral-400);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                Transaction Details
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div>
+                  <label class="form-label">Transaction ID</label>
+                  <input class="form-input" id="f-txnid" readonly placeholder="TXN-0000" />
+                  <div class="form-hint">Auto-generated ID for this analysis.</div>
+                </div>
+                <div>
+                  <label class="form-label">Amount ($) <span style="color:var(--error)">*</span></label>
+                  <input class="form-input" id="f-amount" type="number" min="0" step="0.01" placeholder="e.g. 2499.99" />
+                  <div class="form-hint">Enter the transaction amount in USD.</div>
+                </div>
+                <div>
+                  <label class="form-label">Transaction Type <span style="color:var(--error)">*</span></label>
+                  <select class="form-select" id="f-type">
+                    <option value="">Select type…</option>
+                    <option value="TRANSFER">Wire Transfer</option>
+                    <option value="CASH_OUT">Cash Withdrawal</option>
+                    <option value="CASH_IN">Cash Deposit</option>
+                    <option value="PAYMENT">Payment</option>
+                    <option value="DEBIT">Debit</option>
+                  </select>
+                  <div class="form-hint">Payment rail / transfer method.</div>
+                </div>
+                <div>
+                  <label class="form-label">Step (hour since start)</label>
+                  <input class="form-input" id="f-step" type="number" min="0" value="1" />
+                  <div class="form-hint">Used to derive time-of-day risk signal.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--neutral-100)"></div>
+
+            <!-- Section: Origin account -->
+            <div>
+              <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--neutral-400);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                Origin Account Balances
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div>
+                  <label class="form-label">Balance Before ($) <span style="color:var(--error)">*</span></label>
+                  <input class="form-input" id="f-oldOrig" type="number" min="0" step="0.01" placeholder="e.g. 50000.00" />
+                  <div class="form-hint">Sender's balance before this transaction.</div>
+                </div>
+                <div>
+                  <label class="form-label">Balance After ($) <span style="color:var(--error)">*</span></label>
+                  <input class="form-input" id="f-newOrig" type="number" min="0" step="0.01" placeholder="e.g. 47500.01" />
+                  <div class="form-hint">Sender's balance after this transaction.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--neutral-100)"></div>
+
+            <!-- Section: Destination account -->
+            <div>
+              <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--neutral-400);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Destination Account Balances
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div>
+                  <label class="form-label">Balance Before ($)</label>
+                  <input class="form-input" id="f-oldDest" type="number" min="0" step="0.01" placeholder="e.g. 0.00" value="0" />
+                  <div class="form-hint">Recipient's balance before this transaction.</div>
+                </div>
+                <div>
+                  <label class="form-label">Balance After ($)</label>
+                  <input class="form-input" id="f-newDest" type="number" min="0" step="0.01" placeholder="e.g. 2499.99" value="0" />
+                  <div class="form-hint">Recipient's balance after this transaction.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;padding-top:4px">
+              <button class="btn btn-primary" onclick="analyzeTransaction()" id="btn-analyze" style="padding:9px 24px;font-size:13px">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Analyze Transaction
+              </button>
+              <button class="btn btn-ghost" onclick="resetForm()">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result panel -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+
+          <!-- Risk meter -->
+          <div class="panel" id="result-panel" style="overflow:visible">
+            <div class="panel-header">
+              <div class="panel-title">Risk Score</div>
+            </div>
+            <div style="padding:24px 20px;text-align:center">
+              <div id="result-idle" style="color:var(--neutral-400);font-size:13px;font-weight:600;padding:20px 0">
+                <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity:.3;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                Submit the form to see the model's verdict.
+              </div>
+              <div id="result-content" style="display:none">
+                <!-- Donut gauge -->
+                <div style="position:relative;width:140px;height:140px;margin:0 auto 16px">
+                  <canvas id="gauge-chart" width="140" height="140"></canvas>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <div id="gauge-pct" style="font-size:26px;font-weight:900;line-height:1"></div>
+                    <div style="font-size:10px;font-weight:700;color:var(--neutral-400);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">Fraud Risk</div>
+                  </div>
+                </div>
+                <div id="verdict-badge" style="display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:24px;font-size:14px;font-weight:900;margin-bottom:4px"></div>
+                <div id="risk-level-label" style="font-size:11px;font-weight:700;color:var(--neutral-400);margin-top:4px"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Risk factors -->
+          <div class="panel" id="factors-panel" style="display:none">
+            <div class="panel-header">
+              <div class="panel-title">Risk Signals</div>
+              <div class="panel-sub" id="factors-sub"></div>
+            </div>
+            <div id="factors-list" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ANALYTICS VIEW ═══ -->
+    <div class="view" id="view-analytics">
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Analytics</h1>
+          <p class="page-sub">Live stream metrics, model performance, and risk distribution.</p>
+        </div>
+        <div class="title-actions">
+          <span class="status-pill" id="analytics-status-pill">
+            <span class="status-dot" id="analytics-status-dot"></span>
+            <span id="analytics-status-text">Idle</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Top 3 stat cards -->
+      <div class="analytics-grid-top">
+        <div class="analytics-stat">
+          <div>
+            <div class="analytics-stat-label">Total Transactions</div>
+            <div class="analytics-stat-value" id="a-total" style="color:var(--brand)">0</div>
+            <div class="analytics-stat-sub">In selected window</div>
+          </div>
+          <div class="analytics-stat-icon" style="background:#E6F4FE">
+            <svg fill="none" stroke="#1358aa" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          </div>
+        </div>
+        <div class="analytics-stat">
+          <div>
+            <div class="analytics-stat-label">Fraud Rate</div>
+            <div class="analytics-stat-value" id="a-rate" style="color:var(--error)">0.0%</div>
+            <div class="analytics-stat-sub">Lower is better</div>
+          </div>
+          <div class="analytics-stat-icon" style="background:var(--error-bg)">
+            <svg fill="none" stroke="#FF5630" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+        </div>
+        <div class="analytics-stat">
+          <div>
+            <div class="analytics-stat-label">Model Accuracy</div>
+            <div class="analytics-stat-value" id="a-acc" style="color:var(--success)">—</div>
+            <div class="analytics-stat-sub">Correct vs actual label</div>
+          </div>
+          <div class="analytics-stat-icon" style="background:var(--success-bg)">
+            <svg fill="none" stroke="#36B37E" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- No data yet -->
+      <div id="analytics-idle" class="analytics-idle">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <h3>No data yet</h3>
+        <p>Start the live monitor to see charts populate in real time.</p>
+        <button class="btn btn-primary" onclick="switchView('monitor'); startStream()" style="margin-top:4px">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 3l14 9-14 9V3z"/></svg>
+          Launch Monitor
+        </button>
+      </div>
+
+      <div id="analytics-charts" style="display:none">
+        <!-- Row 1: bar chart + donut -->
+        <div class="analytics-charts-row">
+          <div class="chart-panel">
+            <div class="chart-header">
+              <div class="chart-title">Transactions by Type</div>
+              <div class="chart-sub">Total and fraud count per transaction type</div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#60B4F6"></div>Total</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#FF7A66"></div>Fraud</div>
+            </div>
+            <div class="chart-body" style="height:220px">
+              <canvas id="chart-by-type"></canvas>
+            </div>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-header">
+              <div class="chart-title">Legit vs Fraud</div>
+              <div class="chart-sub">Transaction outcome distribution</div>
+            </div>
+            <div class="chart-body" style="height:252px;display:flex;align-items:center;justify-content:center">
+              <canvas id="chart-donut" style="max-width:200px;max-height:200px"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: probability timeline + accuracy -->
+        <div class="analytics-charts-row">
+          <div class="chart-panel">
+            <div class="chart-header">
+              <div class="chart-title">Fraud Probability Timeline</div>
+              <div class="chart-sub">Model confidence per transaction (last 30)</div>
+            </div>
+            <div class="chart-body" style="height:180px">
+              <canvas id="chart-timeline"></canvas>
+            </div>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-header">
+              <div class="chart-title">Prediction Accuracy</div>
+              <div class="chart-sub">Correct vs incorrect predictions</div>
+            </div>
+            <div class="chart-body" style="height:180px;display:flex;align-items:center;justify-content:center">
+              <canvas id="chart-accuracy" style="max-width:160px;max-height:160px"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<script>
+  let ws = null, running = false;
+  let stats = { total: 0, legit: 0, fraud: 0, correct: 0, incorrect: 0, alerts: 0 };
+
+  // Per-type data
+  const TYPES = ['PAYMENT','CASH_OUT','DEBIT','TRANSFER','CASH_IN'];
+  let typeTotal = {}, typeFraud = {};
+  TYPES.forEach(t => { typeTotal[t] = 0; typeFraud[t] = 0; });
+
+  // Timeline data (last 30)
+  let timelineProbs = [], timelineLabels = [], timelineIsFraud = [];
+
+  const $ = id => document.getElementById(id);
+  const fmt = n => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+  // ── View switching ──
+  const VIEW_TITLES = { monitor: 'Live Monitor', analytics: 'Analytics', check: 'Check Transaction' };
+  function switchView(v) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('view-' + v).classList.add('active');
+    $('nav-' + v).classList.add('active');
+    $('breadcrumb-page').textContent = VIEW_TITLES[v] || v;
+    if (v === 'analytics') syncAnalyticsStatus();
+    if (v === 'check') initTxnId();
+  }
+
+  // ── Transaction form ──
+  let gaugeChart = null;
+
+  function initTxnId() {
+    $('f-txnid').value = 'TXN-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
+  function resetForm() {
+    ['f-amount','f-oldOrig','f-newOrig'].forEach(id => { $(id).value = ''; $(id).classList.remove('error'); });
+    $('f-type').value  = '';
+    $('f-step').value  = '1';
+    $('f-oldDest').value = '0';
+    $('f-newDest').value = '0';
+    $('result-idle').style.display    = '';
+    $('result-content').style.display = 'none';
+    $('factors-panel').style.display  = 'none';
+    initTxnId();
+    if (gaugeChart) { gaugeChart.destroy(); gaugeChart = null; }
+  }
+
+  async function analyzeTransaction() {
+    const amount   = parseFloat($('f-amount').value);
+    const type     = $('f-type').value;
+    const oldOrig  = parseFloat($('f-oldOrig').value);
+    const newOrig  = parseFloat($('f-newOrig').value);
+
+    // Validate required fields
+    let valid = true;
+    ['f-amount','f-type','f-oldOrig','f-newOrig'].forEach(id => $(id).classList.remove('error'));
+    if (!amount || amount <= 0) { $('f-amount').classList.add('error'); valid = false; }
+    if (!type)                  { $('f-type').classList.add('error');   valid = false; }
+    if (isNaN(oldOrig))         { $('f-oldOrig').classList.add('error'); valid = false; }
+    if (isNaN(newOrig))         { $('f-newOrig').classList.add('error'); valid = false; }
+    if (!valid) return;
+
+    const btn = $('btn-analyze');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="animation:spin .8s linear infinite"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analyzing…';
+
+    try {
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type:           type,
+          amount:         amount,
+          step:           parseInt($('f-step').value) || 1,
+          oldbalanceOrg:  oldOrig,
+          newbalanceOrig: newOrig,
+          oldbalanceDest: parseFloat($('f-oldDest').value) || 0,
+          newbalanceDest: parseFloat($('f-newDest').value) || 0,
+        })
+      });
+      const data = await res.json();
+      showResult(data);
+    } catch(e) {
+      alert('Error connecting to the server. Make sure the backend is running on port 8000.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> Analyze Transaction';
+    }
+  }
+
+  function showResult(data) {
+    $('result-idle').style.display    = 'none';
+    $('result-content').style.display = '';
+
+    const pct      = (data.fraud_probability * 100).toFixed(1);
+    const color    = data.is_fraud ? '#FF5630' : (data.fraud_probability > 0.3 ? '#FFAB00' : '#36B37E');
+    const bgColor  = data.is_fraud ? '#FFEBE6' : (data.fraud_probability > 0.3 ? '#FFFAE6' : '#E3FCEF');
+    const txtColor = data.is_fraud ? '#BF2600' : (data.fraud_probability > 0.3 ? '#975900' : '#006644');
+
+    $('gauge-pct').textContent = pct + '%';
+    $('gauge-pct').style.color = color;
+
+    const badge = $('verdict-badge');
+    badge.style.background = bgColor;
+    badge.style.color = txtColor;
+    badge.innerHTML = data.is_fraud
+      ? '⚠ FRAUD DETECTED'
+      : (data.fraud_probability > 0.3 ? '⚡ REVIEW NEEDED' : '✓ LEGITIMATE');
+
+    $('risk-level-label').textContent = data.risk_level + ' RISK · ' + pct + '% fraud probability';
+    $('risk-level-label').style.color = color;
+
+    if (gaugeChart) gaugeChart.destroy();
+    const ctx = $('gauge-chart').getContext('2d');
+    gaugeChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [data.fraud_probability * 100, 100 - data.fraud_probability * 100],
+          backgroundColor: [color, '#F0F1F3'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: false, cutout: '72%',
+        animation: { duration: 600, easing: 'easeInOutQuart' },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+      }
+    });
+
+    // Risk factors
+    $('factors-panel').style.display = '';
+    $('factors-sub').textContent = data.risk_factors.length + ' signal' + (data.risk_factors.length !== 1 ? 's' : '') + ' detected';
+    const fl = $('factors-list');
+    fl.innerHTML = '';
+    if (data.risk_factors.length === 0) {
+      fl.innerHTML = '<div style="padding:12px 4px;font-size:12px;font-weight:600;color:var(--neutral-400)">✓ No suspicious signals detected</div>';
+    } else {
+      data.risk_factors.forEach(f => {
+        const d = document.createElement('div');
+        d.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#FFF5F3;border:1px solid #FFBDAD;border-radius:8px;font-size:12px;font-weight:700;color:#BF2600';
+        d.innerHTML = '<span style="margin-top:1px;flex-shrink:0">⚠</span>' + f;
+        fl.appendChild(d);
+      });
+    }
+  }
+
+  // Spin animation for loading button
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+
+  // ── Status helpers ──
+  function setStatus(state) {
+    ['status-pill','analytics-status-pill'].forEach(id => {
+      const pill = $(id);
+      if (!pill) return;
+      state === 'live' ? pill.classList.add('live') : pill.classList.remove('live');
+    });
+    ['status-dot','analytics-status-dot'].forEach(id => {
+      const dot = $(id);
+      if (!dot) return;
+      state === 'live' ? dot.classList.add('live') : dot.classList.remove('live');
+    });
+    const label = state === 'live' ? 'Streaming Live' : state === 'stopped' ? 'Stopped' : 'Idle';
+    ['status-text','analytics-status-text'].forEach(id => {
+      const el = $(id);
+      if (el) el.textContent = label;
+    });
+  }
+
+  function syncAnalyticsStatus() { setStatus(running ? 'live' : (stats.total > 0 ? 'stopped' : 'idle')); }
+
+  // ── Stats ──
+  function updateStats() {
+    $('stat-total').textContent = stats.total;
+    $('stat-legit').textContent = stats.legit;
+    $('stat-fraud').textContent = stats.fraud;
+    const acc = stats.total > 0 ? (stats.correct / stats.total * 100).toFixed(1) + '%' : '—';
+    $('stat-acc').textContent = acc;
+
+    $('a-total').textContent = stats.total;
+    const rate = stats.total > 0 ? (stats.fraud / stats.total * 100).toFixed(1) + '%' : '0.0%';
+    $('a-rate').textContent = rate;
+    $('a-acc').textContent  = acc;
+  }
+
+  // ── Stream controls ──
+  function startStream() {
+    if (running) return;
+    $('idle-card').style.display    = 'none';
+    $('content-grid').style.display = 'grid';
+    $('btn-start').style.display    = 'none';
+    $('btn-stop').style.display     = '';
+    running = true;
+    setStatus('live');
+    $('analytics-idle').style.display   = 'none';
+    $('analytics-charts').style.display = '';
+    initBarChart();
+
+    ws = new WebSocket('ws://localhost:8000/ws/live');
+    ws.onopen = () => {};
+    ws.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.type === 'round_end') { $('stat-round').textContent = d.round; return; }
+
+      stats.total++;
+      d.is_fraud ? stats.fraud++ : stats.legit++;
+      if (d.prediction === d.label) stats.correct++; else stats.incorrect++;
+      $('stat-round').textContent = d.round;
+
+      const t = d.raw.type;
+      typeTotal[t] = (typeTotal[t] || 0) + 1;
+      if (d.is_fraud) typeFraud[t] = (typeFraud[t] || 0) + 1;
+
+      timelineProbs.push(+(d.probability * 100).toFixed(1));
+      timelineLabels.push('#' + d.index);
+      timelineIsFraud.push(d.is_fraud);
+      if (timelineProbs.length > 30) { timelineProbs.shift(); timelineLabels.shift(); timelineIsFraud.shift(); }
+
+      updateStats();
+      addRow(d);
+      updateCharts();
+      if (d.is_fraud) { addAlert(d); updateFraudBadge(); }
+    };
+    ws.onerror = () => stopStream();
+    ws.onclose = () => {
+      if (running) {
+        running = false; setStatus('stopped');
+        $('btn-start').style.display = ''; $('btn-stop').style.display = 'none';
+      }
+    };
+  }
+
+  function stopStream() {
+    running = false;
+    if (ws) { ws.close(); ws = null; }
+    setStatus('stopped');
+    $('btn-start').style.display = ''; $('btn-stop').style.display = 'none';
+    $('feed-sub').textContent = 'Stream stopped';
+  }
+
+  function clearFeed() {
+    $('tx-tbody').innerHTML = '';
+    $('alerts-list').innerHTML = '<div class="empty-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg><p>No fraud detected yet</p></div>';
+    stats = { total:0, legit:0, fraud:0, correct:0, incorrect:0, alerts:0 };
+    TYPES.forEach(t => { typeTotal[t] = 0; typeFraud[t] = 0; });
+    timelineProbs = []; timelineLabels = []; timelineIsFraud = [];
+    updateStats();
+    $('stat-round').textContent = '—';
+    $('stat-acc').textContent   = '—';
+    $('alert-sub').textContent  = 'No alerts yet';
+    $('row-count').textContent  = '';
+    $('fraud-badge').classList.remove('show');
+    if (!running) { $('idle-card').style.display = 'flex'; $('content-grid').style.display = 'none'; }
+    $('analytics-idle').style.display    = '';
+    $('analytics-charts').style.display  = 'none';
+    destroyCharts();
+  }
+
+  function updateFraudBadge() {
+    const b = $('fraud-badge');
+    b.textContent = stats.alerts;
+    b.classList.add('show');
+  }
+
+  // ── Table row ──
+  function addRow(d) {
+    const prob = (d.probability * 100).toFixed(1);
+    const fillColor = d.is_fraud ? '#FF5630' : '#36B37E';
+    const correct   = d.prediction === d.label;
+    const tr = document.createElement('tr');
+    if (d.is_fraud) tr.classList.add('fraud-row');
+    tr.innerHTML = `
+      <td class="muted-cell" style="font-size:11px">${d.index}</td>
+      <td><span class="type-pill type-${d.raw.type}">${d.raw.type.replace('_',' ')}</span></td>
+      <td class="amount-cell">$${fmt(d.raw.amount)}</td>
+      <td class="muted-cell">$${fmt(d.raw.oldbalanceOrg)}</td>
+      <td class="muted-cell">$${fmt(d.raw.newbalanceOrig)}</td>
+      <td class="muted-cell">$${fmt(d.raw.oldbalanceDest)}</td>
+      <td>
+        <div class="prob-wrap">
+          <div class="prob-bar"><div class="prob-fill" style="width:${prob}%;background:${fillColor}"></div></div>
+          <span class="prob-text ${d.is_fraud ? 'prob-high' : 'prob-low'}">${prob}%</span>
+        </div>
+      </td>
+      <td>${d.is_fraud ? '<span class="badge badge-fraud">⚠ FRAUD</span>' : '<span class="badge badge-legit">✓ LEGIT</span>'}</td>
+      <td style="font-size:11px;font-weight:800;color:${correct ? '#36B37E' : '#FF5630'}">${d.label} ${correct ? '✓' : '✗'}</td>`;
+    const tbody = $('tx-tbody');
+    tbody.insertBefore(tr, tbody.firstChild);
+    while (tbody.rows.length > 100) tbody.deleteRow(tbody.rows.length - 1);
+    $('feed-sub').textContent = `Streaming · ${stats.total} transactions processed`;
+    $('row-count').textContent = `${Math.min(stats.total, 100)} rows`;
+  }
+
+  // ── Alert card ──
+  function addAlert(d) {
+    const list = $('alerts-list');
+    const empty = list.querySelector('.empty-state');
+    if (empty) empty.remove();
+    stats.alerts++;
+    $('alert-sub').textContent = `${stats.alerts} fraud transaction${stats.alerts > 1 ? 's' : ''} detected`;
+    const card = document.createElement('div');
+    card.className = 'alert-card';
+    card.innerHTML = `
+      <div class="alert-header">
+        <span class="alert-label">⚠ Fraud Detected</span>
+        <span class="alert-time">${new Date().toLocaleTimeString()}</span>
+      </div>
+      <div class="alert-type">${d.raw.type.replace('_',' ')} transaction flagged</div>
+      <div class="alert-amount">$${fmt(d.raw.amount)}</div>
+      <div class="alert-prob">Probability: <strong style="color:#BF2600">${(d.probability*100).toFixed(1)}%</strong></div>
+      <div class="alert-drain">Balance drained: $${fmt(d.raw.oldbalanceOrg)} → $${fmt(d.raw.newbalanceOrig)}</div>`;
+    list.insertBefore(card, list.firstChild);
+  }
+
+  // ── Charts ──
+  let chartByType = null, chartDonut = null, chartTimeline = null, chartAccuracy = null;
+
+  const CHART_DEFAULTS = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    animation: { duration: 0 },
+  };
+
+  function destroyCharts() {
+    [chartByType, chartDonut, chartTimeline, chartAccuracy].forEach(c => c && c.destroy());
+    chartByType = chartDonut = chartTimeline = chartAccuracy = null;
+  }
+
+  function initBarChart() {
+    if (chartByType) return;
+    const typeLabels = TYPES.map(t => t.replace('_',' ').replace(/(\w+)/g, w => w[0]+w.slice(1).toLowerCase()));
+    const ctx = $('chart-by-type').getContext('2d');
+    chartByType = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: typeLabels,
+        datasets: [
+          { label: 'Total', data: [0,0,0,0,0], backgroundColor: '#60B4F6', borderRadius: 4, borderSkipped: false },
+          { label: 'Fraud', data: [0,0,0,0,0], backgroundColor: '#FF7A66', borderRadius: 4, borderSkipped: false },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 0 },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11, weight: '700' }, color: '#7A869A' } },
+          y: { grid: { color: '#F0F1F3' }, ticks: { font: { size: 11 }, color: '#7A869A', precision: 0 }, beginAtZero: true, suggestedMax: 5 }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y } }
+        }
+      }
+    });
+  }
+
+  function updateCharts() {
+    if (stats.total === 0) return;
+
+    const typeLabels = TYPES.map(t => t.replace('_',' ').replace(/(\w+)/g, w => w[0]+w.slice(1).toLowerCase()));
+    const typeTotArr = TYPES.map(t => typeTotal[t] || 0);
+    const typeFrArr  = TYPES.map(t => typeFraud[t] || 0);
+
+    // Bar chart — pre-created on stream start, just update data here
+    if (chartByType) {
+      chartByType.data.datasets[0].data = typeTotArr;
+      chartByType.data.datasets[1].data = typeFrArr;
+      chartByType.update('none');
+    }
+
+    // Donut: legit vs fraud
+    if (!chartDonut) {
+      const ctx = $('chart-donut').getContext('2d');
+      chartDonut = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Legitimate', 'Fraud'],
+          datasets: [{ data: [stats.legit, stats.fraud], backgroundColor: ['#36B37E','#FF5630'], borderWidth: 0, hoverOffset: 6 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true, cutout: '68%',
+          animation: { duration: 400 },
+          plugins: {
+            legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700' }, color: '#42526E', padding: 14, usePointStyle: true, pointStyleWidth: 8 } }
+          }
+        }
+      });
+    } else {
+      chartDonut.data.datasets[0].data = [stats.legit, stats.fraud];
+      chartDonut.update('none');
+    }
+
+    // Timeline: fraud probability
+    if (!chartTimeline) {
+      const ctx = $('chart-timeline').getContext('2d');
+      chartTimeline = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [...timelineLabels],
+          datasets: [{
+            data: [...timelineProbs],
+            borderColor: '#1358aa', backgroundColor: 'rgba(19,88,170,0.07)',
+            borderWidth: 2, pointRadius: timelineProbs.map((_,i) => timelineIsFraud[i] ? 5 : 2),
+            pointBackgroundColor: timelineProbs.map((_,i) => timelineIsFraud[i] ? '#FF5630' : '#1358aa'),
+            tension: 0.3, fill: true,
+          }]
+        },
+        options: {
+          ...CHART_DEFAULTS,
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#7A869A', maxTicksLimit: 10 } },
+            y: { min: 0, max: 100, grid: { color: '#F0F1F3' }, ticks: { font: { size: 10 }, color: '#7A869A', callback: v => v + '%' } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(1) + '% fraud probability' } }
+          }
+        }
+      });
+    } else {
+      chartTimeline.data.labels = [...timelineLabels];
+      chartTimeline.data.datasets[0].data = [...timelineProbs];
+      chartTimeline.data.datasets[0].pointRadius = timelineProbs.map((_,i) => timelineIsFraud[i] ? 5 : 2);
+      chartTimeline.data.datasets[0].pointBackgroundColor = timelineProbs.map((_,i) => timelineIsFraud[i] ? '#FF5630' : '#1358aa');
+      chartTimeline.update('none');
+    }
+
+    // Accuracy donut
+    if (!chartAccuracy) {
+      const ctx = $('chart-accuracy').getContext('2d');
+      chartAccuracy = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Correct', 'Incorrect'],
+          datasets: [{ data: [stats.correct, stats.incorrect], backgroundColor: ['#00B8D9','#FFAB00'], borderWidth: 0, hoverOffset: 5 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true, cutout: '65%',
+          animation: { duration: 400 },
+          plugins: {
+            legend: { display: true, position: 'bottom', labels: { font: { size: 11, weight: '700' }, color: '#42526E', padding: 12, usePointStyle: true, pointStyleWidth: 8 } }
+          }
+        }
+      });
+    } else {
+      chartAccuracy.data.datasets[0].data = [stats.correct, stats.incorrect];
+      chartAccuracy.update('none');
+    }
+  }
+</script>
+</body>
+</html>
