@@ -84,7 +84,8 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('GOT INSIGHT:', d['fraud_report']['title'] if d else 'NONE'\\)\")",
       "Bash(curl -s \"http://localhost:8002/alerts/llm-report/1/20\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('GOT:', json.dumps\\(d.get\\('fraud_report',{}\\).get\\('title','MISSING'\\) if d else 'NULL'\\)\\)\")",
-      "Bash(curl -s http://localhost:8002/alerts/llm-report?limit=3)"
+      "Bash(curl -s http://localhost:8002/alerts/llm-report?limit=3)",
+      "Bash(git config *)"
     ]
   }
 }
