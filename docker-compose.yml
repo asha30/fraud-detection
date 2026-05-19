@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: postgres:15-alpine
+    container_name: fraud_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fraud_database
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: fraud_backend
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/fraud_database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: fraud_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      BACKEND_URL: http://backend:8002
+    depends_on:
+      - backend
+    volumes:
+      - ./Synthetic_Financial_datasets_log.csv:/app/Synthetic_Financial_datasets_log.csv:ro
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8002
+        VITE_WS_URL: ws://localhost:8000/ws/live
+    container_name: fraud_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+      - backend
+
+volumes:
+  pgdata:

@@ -6,9 +6,12 @@ Serves index.html and pushes live transaction stream over WebSocket.
 import asyncio
 import json
 import logging
+import os
 from pathlib import Path
 
 import httpx
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8002")
 
 import joblib
 import numpy as np
@@ -345,7 +348,7 @@ async def live_stream(websocket: WebSocket):
                         async with httpx.AsyncClient() as client:
                             # 1. Store in local backend (with pre-computed insights)
                             await client.post(
-                                "http://localhost:8002/alerts/fraud",
+                                f"{BACKEND_URL}/alerts/fraud",
                                 json={
                                     "transaction_index": idx,
                                     "round":             round_num,

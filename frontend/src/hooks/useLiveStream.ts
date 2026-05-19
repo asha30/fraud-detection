@@ -22,7 +22,7 @@ export type LiveTransaction = {
 
 export type StreamStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
-const WS_URL = 'ws://127.0.0.1:8000/ws/live';
+const WS_URL = (import.meta.env.VITE_WS_URL as string | undefined) ?? 'ws://127.0.0.1:8000/ws/live';
 
 // Singleton WebSocket — shared across the whole app so navigating away doesn't kill it
 let _ws: WebSocket | null = null;
@@ -96,7 +96,7 @@ export default function useLiveStream() {
 
   const clearAll = useCallback(() => {
     clear();
-    fetch('http://localhost:8002/alerts/insights', { method: 'DELETE' }).catch(() => {});
+    fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8002'}/alerts/insights`, { method: 'DELETE' }).catch(() => {});
   }, [clear]);
 
   return { transactions, status, stats, connect, disconnect, clear: clearAll };

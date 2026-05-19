@@ -98,7 +98,7 @@ function useLLMReports() {
   const [reports, setReports] = useState<LLMReport[]>([]);
   useEffect(() => {
     const fetch_ = () =>
-      fetch('http://localhost:8002/alerts/llm-report')
+      fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8002'}/alerts/llm-report`)
         .then(r => r.json())
         .then(setReports)
         .catch(() => {});
@@ -114,7 +114,7 @@ function useTxInsight(round: number, index: number) {
   useEffect(() => {
     setReport(null);
     const fetch_ = () =>
-      fetch(`http://localhost:8002/alerts/llm-report/${round}/${index}`)
+      fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8002'}/alerts/llm-report/${round}/${index}`)
         .then(r => r.json())
         .then(data => { if (data) setReport(data as LLMReport); })
         .catch(() => {});
