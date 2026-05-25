@@ -1,0 +1,33 @@
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Data
+pandas==2.3.1
+numpy>=1.24.0
+
+# ML — needed by backend model loader and root app.py / predict.py
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+joblib>=1.3.0
+
+# Database
+sqlalchemy==2.0.32
+psycopg2-binary==2.9.9
+
+# Auth / JWT
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.3
+python-multipart==0.0.9
+
+# Pydantic / validation (email-validator needed for EmailStr in auth schema)
+pydantic==2.8.2
+email-validator>=2.0.0
+
+# Env / config
+python-dotenv==1.0.1
+
+# HTTP client (used by ml_service.py stream simulator)
+httpx>=0.27.0
+websockets>=12.0

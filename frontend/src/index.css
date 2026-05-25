@@ -1,11 +1,64 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+
 :root {
-  --bg-base: #0a0e1a; --bg-card: #111827; --bg-card2: #1a2235;
-  --border: #1f2d45; --accent: #3b82f6; --accent2: #6366f1;
-  --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-  --text: #f1f5f9; --text-muted: #64748b; --text-dim: #94a3b8;
+  --fs-border-light: #e5e7eb;
+  --fs-border-dark: #2a2a2a;
+  color-scheme: light;
 }
-body { font-family: 'Inter', sans-serif; background: var(--bg-base); color: var(--text); min-height: 100vh; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  /* Hairline border token (0.5px) with light/dark colors */
+  .fs-border {
+    border-style: solid;
+    border-width: 0.5px;
+    border-color: var(--fs-border-light);
+  }
+
+  .dark .fs-border {
+    border-color: var(--fs-border-dark);
+  }
+
+  /* Card token: white bg, hairline border, radius 12px, padding 16px */
+  .fs-card {
+    border-radius: 12px;
+    background: white;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .fs-card {
+    background: #09090b; /* zinc-950 */
+  }
+
+  .fs-card-border {
+    border-style: solid;
+    border-width: 0.5px;
+    border-color: var(--fs-border-light);
+    border-radius: 12px;
+    background: white;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .fs-card-border {
+    border-color: var(--fs-border-dark);
+    background: #09090b; /* zinc-950 */
+  }
+}

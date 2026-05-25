@@ -1,0 +1,11 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-base: #0a0e1a; --bg-card: #111827; --bg-card2: #1a2235;
+  --border: #1f2d45; --accent: #3b82f6; --accent2: #6366f1;
+  --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+  --text: #f1f5f9; --text-muted: #64748b; --text-dim: #94a3b8;
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg-base); color: var(--text); min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }

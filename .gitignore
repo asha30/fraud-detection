@@ -8,3 +8,5 @@ build/
 .env
 *.log
 model/identity_graph.graphml
+backend/app/data/
+backend/app/ml/*.pkl
